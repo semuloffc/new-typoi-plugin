@@ -240,11 +240,17 @@ void PetrichorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
                            *apvts.getRawParameterValue(ParameterIDs::burstTone));
     }
 
-    dewLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(*apvts.getRawParameterValue(ParameterIDs::dewLevel)) * gains.dew);
-    bloomLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(*apvts.getRawParameterValue(ParameterIDs::bloomLevel)) * gains.bloom);
-    breezeLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(*apvts.getRawParameterValue(ParameterIDs::breezeLevel)) * gains.breeze);
-    rootsLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(*apvts.getRawParameterValue(ParameterIDs::rootsLevel)) * gains.roots);
-    burstLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(*apvts.getRawParameterValue(ParameterIDs::burstLevel)));
+    float dewLevel = *apvts.getRawParameterValue(ParameterIDs::dewLevel);
+    float bloomLevel = *apvts.getRawParameterValue(ParameterIDs::bloomLevel);
+    float breezeLevel = *apvts.getRawParameterValue(ParameterIDs::breezeLevel);
+    float rootsLevel = *apvts.getRawParameterValue(ParameterIDs::rootsLevel);
+    float burstLevel = *apvts.getRawParameterValue(ParameterIDs::burstLevel);
+
+    dewLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(dewLevel) * gains.dew);
+    bloomLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(bloomLevel) * gains.bloom);
+    breezeLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(breezeLevel) * gains.breeze);
+    rootsLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(rootsLevel) * gains.roots);
+    burstLevelSmooth.setTargetValue(juce::Decibels::decibelsToGain(burstLevel));
 
     juce::AudioBuffer<float> mainBuffer(buffer.getArrayOfWritePointers(), 2, buffer.getNumSamples());
     mainBuffer.clear();
