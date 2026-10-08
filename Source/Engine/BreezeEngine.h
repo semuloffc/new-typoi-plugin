@@ -13,7 +13,7 @@ public:
 
         for (auto& stage : bpfStages)
         {
-            stage.state = juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, 4600.0f, 0.8f);
+            stage.coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, 4600.0f, 0.8f);
             stage.reset();
         }
 

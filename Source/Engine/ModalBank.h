@@ -7,6 +7,7 @@ class ModalBank
 public:
     void prepare(double sampleRate)
     {
+        currentSampleRate = sampleRate;
         for (auto& filter : filters)
             filter.prepare({sampleRate, 512, 1});
     }
@@ -40,7 +41,7 @@ public:
                 float q = (material < 50.0f) ? 3.0f : (8.0f + material * 0.1f);
 
                 filters[i].coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-                    filters[i].coefficients->getSampleRate(),
+                    currentSampleRate,
                     modeFreq,
                     q,
                     1.0f);
@@ -78,4 +79,5 @@ public:
 private:
     std::array<juce::dsp::IIR::Filter<float>, 4> filters;
     std::array<float, 4> impulse{};
+    double currentSampleRate = 44100.0;
 };
