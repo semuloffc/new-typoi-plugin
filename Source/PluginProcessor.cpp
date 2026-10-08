@@ -297,10 +297,12 @@ void PetrichorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
     greenhouse.process(reverbInput, mainBuffer, ghMix);
 
-    mistFilter.setCutoff(getSampleRate(), *apvts.getRawParameterValue(ParameterIDs::mistCutoff));
+    float mistCutoff = *apvts.getRawParameterValue(ParameterIDs::mistCutoff);
+    mistFilter.setCutoff(getSampleRate(), mistCutoff);
     mistFilter.process(mainBuffer);
 
-    masterGainSmooth.setTargetValue(juce::Decibels::decibelsToGain(*apvts.getRawParameterValue(ParameterIDs::masterGain)));
+    float masterGain = *apvts.getRawParameterValue(ParameterIDs::masterGain);
+    masterGainSmooth.setTargetValue(juce::Decibels::decibelsToGain(masterGain));
 
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
