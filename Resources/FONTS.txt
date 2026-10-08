@@ -1,0 +1,7 @@
+Inter font files should be placed here:
+- Inter-Regular.ttf
+- Inter-Medium.ttf
+
+Download from: https://fonts.google.com/specimen/Inter
+
+The plugin will fall back to system sans-serif if these files are missing.

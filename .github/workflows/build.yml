@@ -1,0 +1,108 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            artifact_name: Petrichor-Windows
+          - os: macos-latest
+            artifact_name: Petrichor-macOS
+          - os: ubuntu-latest
+            artifact_name: Petrichor-Linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev libx11-dev libxcomposite-dev libxcursor-dev libxinerama-dev libxrandr-dev libxrender-dev libfreetype6-dev libglu1-mesa-dev libjack-jackd2-dev
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Download pluginval
+      if: runner.os != 'Linux'
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          curl -LO https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip
+          7z x pluginval_Windows.zip
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          curl -LO https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+          unzip pluginval_macOS.zip
+        fi
+
+    - name: Run pluginval
+      if: runner.os != 'Linux'
+      shell: bash
+      continue-on-error: true
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          ./pluginval.exe --strictness-level 5 --validate-in-process --verbose --vst3 "build/Petrichor_artefacts/Release/VST3/Petrichor.vst3"
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          ./pluginval.app/Contents/MacOS/pluginval --strictness-level 5 --validate-in-process --verbose --vst3 "build/Petrichor_artefacts/Release/VST3/Petrichor.vst3"
+        fi
+
+    - name: Package
+      shell: bash
+      run: |
+        mkdir -p package
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          cp -r "build/Petrichor_artefacts/Release/VST3/Petrichor.vst3" package/
+          echo "Install to: C:\Program Files\Common Files\VST3\" > package/INSTALL.txt
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          cp -r "build/Petrichor_artefacts/Release/VST3/Petrichor.vst3" package/
+          echo "Install to: /Library/Audio/Plug-Ins/VST3/ or ~/Library/Audio/Plug-Ins/VST3/" > package/INSTALL.txt
+        else
+          cp -r "build/Petrichor_artefacts/Release/VST3/Petrichor.vst3" package/
+          echo "Install to: ~/.vst3/ or /usr/local/lib/vst3/" > package/INSTALL.txt
+        fi
+        cp README.md package/
+
+    - name: Create archive
+      shell: bash
+      run: |
+        cd package
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          7z a ../Petrichor-v$(cat ../VERSION)-Windows.zip *
+        else
+          zip -r ../Petrichor-v$(cat ../VERSION)-${{ matrix.artifact_name }}.zip *
+        fi
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: Petrichor-*.zip
+
+    - name: Upload release asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./Petrichor-*.zip
+        asset_name: ${{ matrix.artifact_name }}.zip
+        asset_content_type: application/zip
